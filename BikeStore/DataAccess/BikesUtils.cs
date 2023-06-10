@@ -42,6 +42,10 @@ namespace BikeStore.Dal
             }
         }
 
+        /// <summary>
+        /// Creates table 'Bikes' in SQL database
+        /// </summary>
+        /// <returns></returns>
         public async Task CreateTable()
         {
             try
@@ -52,15 +56,15 @@ namespace BikeStore.Dal
                 {
                     var createQuery =
                         @"CREATE TABLE Bikes(
-	                        Id int,
-	                        Name varchar(255),
-	                        Description varchar(1000),
-	                        Brand varchar(100),
-	                        Price numeric(10,2),
-	                        Weight numeric(10,2),
-	                        HasInsurance bit,
-	                        Size varchar(3),
-                            CreatedIn datetime2(7))
+	                        Id INT IDENTITY(1,1) PRIMARY KEY,
+	                        Name VARCHAR(255),
+	                        Description VARCHAR(1000),
+	                        Brand VARCHAR(100),
+	                        Price NUMERIC(10,2),
+	                        Weight NUMERIC(10,2),
+	                        HasInsurance BIT,
+	                        Size VARCHAR(3),
+                            CreatedIn DATETIME2(7))
                         ";
 
                     using (var con = new SqlConnection(ConnectionString))
@@ -85,9 +89,9 @@ namespace BikeStore.Dal
             {
                 string insertQuery =
                     @"INSERT INTO Bikes
-                        (Id,Name,Description,Brand,Price,Weight,HasInsurance,Size,CreatedIn)
+                        (Name,Description,Brand,Price,Weight,HasInsurance,Size,CreatedIn)
                     VALUES
-                        (@Id,@Name,@Description,@Brand,@Price,@Weight,@HasInsurance,@Size,@CreatedIn)";
+                        (@Name,@Description,@Brand,@Price,@Weight,@HasInsurance,@Size,@CreatedIn)";
 
 
                 using (var con = new SqlConnection(ConnectionString))
@@ -97,8 +101,6 @@ namespace BikeStore.Dal
                     for (int i = 1; i <= quant; i++)
                     {
                         parameters = new DynamicParameters();
-                        parameters.Add("Id", i);
-
                         Random random = new Random();
                         parameters.Add("Description", $"Bike {i}");
                         parameters.Add("Name", Enum.GetName(typeof(Names), random.Next(19)));
@@ -139,11 +141,12 @@ namespace BikeStore.Dal
 
             if(tableExists)
             {
-                string query = @"DELETE FROM Bikes";
+                string query = @"DELETE FROM Bikes; DBCC CHECKIDENT('dbo.Bikes',RESEED,0)";
 
                 using (var con = new SqlConnection(ConnectionString))
                 {
                     con.Execute(query);
+
                 }
             }
             return;

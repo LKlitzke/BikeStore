@@ -1,4 +1,5 @@
 using BikeStore.Dal;
+using BikeStore.Helper;
 
 namespace BikeStore
 {
