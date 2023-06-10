@@ -10,7 +10,7 @@ namespace BikeStore
 
             // Add services to the container.
             builder.Services.AddScoped<IBikeUtils, BikesUtils>();
-            //builder.Services.AddScoped<IRedisHelper, RedisHelper>();
+            builder.Services.AddScoped<IRedisHelper, RedisHelper>();
 
 
             builder.Services.AddControllers();

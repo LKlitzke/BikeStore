@@ -9,9 +9,11 @@ namespace BikeStore.Dal
 {
     public interface IBikeUtils
     {
-        public Task CreateTable();
-        public Task GenerateData(int quant);
         public Task<IEnumerable<Bike>> GetBikes();
+        public Task<Bike> GetBikeById(int id);
+        public Task CreateTable();
+        public Task ClearTable();
+        public Task GenerateData(int quant);
     }
 
     public class BikesUtils : IBikeUtils
@@ -21,11 +23,13 @@ namespace BikeStore.Dal
                .AddJsonFile("appsettings.json")
                .Build();
 
-        public bool CheckIfTableExists(string connectionString)
+        private string ConnectionString => configuration.GetSection("ConnectionString").Value;
+
+        public bool CheckIfTableExists()
         {
             try
             {
-                using (var conn = new SqlConnection(connectionString))
+                using (var conn = new SqlConnection(ConnectionString))
                 {
                     int existsTable = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM Bikes");
                     return true;
@@ -42,8 +46,7 @@ namespace BikeStore.Dal
         {
             try
             {
-                string connectionString = configuration.GetSection("ConnectionString").Value;
-                var tableExists = CheckIfTableExists(connectionString);
+                var tableExists = CheckIfTableExists();
 
                 if (!tableExists)
                 {
@@ -56,10 +59,11 @@ namespace BikeStore.Dal
 	                        Price numeric(10,2),
 	                        Weight numeric(10,2),
 	                        HasInsurance bit,
-	                        Size varchar(3))
+	                        Size varchar(3),
+                            CreatedIn datetime2(7))
                         ";
 
-                    using (var con = new SqlConnection(connectionString))
+                    using (var con = new SqlConnection(ConnectionString))
                     {
                         con.Execute(createQuery);
                     }
@@ -75,19 +79,18 @@ namespace BikeStore.Dal
 
         public async Task GenerateData(int quant)
         {
-            string connectionString = configuration.GetSection("ConnectionString").Value;
-            var tableExists = CheckIfTableExists(connectionString);
+            var tableExists = CheckIfTableExists();
 
             if (tableExists)
             {
                 string insertQuery =
                     @"INSERT INTO Bikes
-                        (Id,Name,Description,Brand,Price,Weight,HasInsurance,Size)
+                        (Id,Name,Description,Brand,Price,Weight,HasInsurance,Size,CreatedIn)
                     VALUES
-                        (@Id,@Name,@Description,@Brand,@Price,@Weight,@HasInsurance,@Size)";
+                        (@Id,@Name,@Description,@Brand,@Price,@Weight,@HasInsurance,@Size,@CreatedIn)";
 
 
-                using (var con = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(ConnectionString))
                 {
                     DynamicParameters parameters;
 
@@ -104,6 +107,7 @@ namespace BikeStore.Dal
                         parameters.Add("Weight", Math.Round(random.Next(10, 20) + random.NextDouble(), 2));
                         parameters.Add("HasInsurance", random.NextDouble() >= 0.5);
                         parameters.Add("Size", Enum.GetName(typeof(Sizes), random.Next(4)));
+                        parameters.Add("CreatedIn", DateTime.Now);
 
                         con.Execute(insertQuery, param: parameters, commandType: System.Data.CommandType.Text);
                     }
@@ -113,19 +117,50 @@ namespace BikeStore.Dal
 
         public async Task<IEnumerable<Bike>> GetBikes()
         {
-            string connectionString = configuration.GetSection("ConnectionString").Value;
-            var tableExists = CheckIfTableExists(connectionString);
+            var tableExists = CheckIfTableExists();
 
             if (tableExists)
             {
                 IEnumerable<Bike> list;
                 string query = @"SELECT * FROM Bikes";
 
-                using (var con = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(ConnectionString))
                 {
                     list = await con.QueryAsync<Bike>(query, commandType: System.Data.CommandType.Text);
                 }
                 return list;
+            }
+            return null;
+        }
+
+        public async Task ClearTable()
+        {
+            var tableExists = CheckIfTableExists();
+
+            if(tableExists)
+            {
+                string query = @"DELETE FROM Bikes";
+
+                using (var con = new SqlConnection(ConnectionString))
+                {
+                    con.Execute(query);
+                }
+            }
+            return;
+        }
+
+        public async Task<Bike> GetBikeById(int id)
+        {
+            var tableExists = CheckIfTableExists();
+            var bike = new Bike();
+            if (tableExists)
+            {
+                string query = $"SELECT TOP 1 * FROM Bikes WHERE Id = {id}";
+                using (var con = new SqlConnection(ConnectionString))
+                {
+                    var item = await con.QueryAsync<Bike>(query, commandType: System.Data.CommandType.Text);
+                    return item.FirstNonDefault();
+                }
             }
             return null;
         }

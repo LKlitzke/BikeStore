@@ -31,7 +31,24 @@ namespace BikeStore.Controllers
             return Ok(list);
         }
 
-        [HttpGet("{quant:int}", Name = "GenerateData")]
+        [HttpGet("{id:int}")]
+        [ActionName("GetBikeById")]
+        public async Task<ActionResult<IEnumerable<Bike>>> GetBikeById(int id)
+        {
+            if(id <= 0)
+            {
+                return BadRequest("Specify an valid Id value.");
+            }
+            var bike = await bikeUtils.GetBikeById(id);
+
+            if(bike == null)
+            {
+                return NotFound($"Bike with ID {id} could not be found.");
+            }
+            return Ok(bike);
+        }
+
+        [HttpPost("{quant:int}", Name = "GenerateData")]
         [ActionName("GerenateData")]
         public async Task<ActionResult> GerenateData(int quant)
         {
@@ -40,14 +57,22 @@ namespace BikeStore.Controllers
                 return BadRequest("Specify a quantity value that is greater than 0.");
             }
             await bikeUtils.GenerateData(quant);
-            return Ok();
+            return Ok($"{quant} rows were successfully generated.");
         }
 
-        [HttpGet(Name = "CreateTable")]
+        [HttpPost(Name = "CreateTable")]
         [ActionName("CreateTable")]
         public async Task<ActionResult> CreateTable()
         {
             await bikeUtils.CreateTable();
+            return Ok();
+        }
+
+        [HttpDelete]
+        [ActionName("ClearTable")]
+        public async Task<ActionResult> ClearTable()
+        {
+            await bikeUtils.ClearTable();
             return Ok();
         }
     }
