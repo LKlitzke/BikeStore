@@ -1,4 +1,4 @@
-<h1 align="center">Email Sender com Workers</h1>
+<h1 align="center">BikeStore App .NET 6</h1>
 
 ## 💻 Projeto
 
